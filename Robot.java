@@ -389,7 +389,7 @@ public class Robot extends IterativeRobot {
         
         operatorControl();
         //System.out.println("After 2: " + frontLeftDriveMotor.get());
-         
+        System.out.println("Aaron is Cool"); 
         System.out.println(current);
         current = power.getCurrent(15);
     }
