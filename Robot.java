@@ -37,6 +37,7 @@ public class Robot extends IterativeRobot {
     JoystickButton buttonB;
     JoystickButton bumperRight;
     JoystickButton bumperLeft;
+    boolean stupidIntake;
     
     Victor frontLeftDriveMotor;
     Victor frontRightDriveMotor;
@@ -139,6 +140,7 @@ public class Robot extends IterativeRobot {
        buttonB = new JoystickButton(xbox, 2);
        bumperRight = new JoystickButton(xbox, 6);
        bumperLeft = new JoystickButton(xbox, 5);
+       stupidIntake = false;
        
        cylinder = new DoubleSolenoid(2,1);//port 0 failed, changed to 2
        
@@ -230,14 +232,14 @@ public class Robot extends IterativeRobot {
         		if(cycleCounter > 275 && cycleCounter < 300) IntakeOnOff(1);
         		else IntakeOnOff(0); if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kForward);
         	}
-        	if(returnAfter){
-        		if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
-        		else driveMotors(0,0);
+        	//if(returnAfter){
+        		//if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
+        		//else driveMotors(0,0);
     		//if(shootBall){
     		//	if(cycleCounter > 515) driveMotors(0,-.4);
     		//}
         		
-        	}
+        	//}
         	
         }else if(autoSelecter == 2){ // ROUGH TERRAIN
         	if(cycleCounter < 50) driveMotors(-0.3, 0.3);
@@ -325,7 +327,7 @@ public class Robot extends IterativeRobot {
     }
 
     public void teleopInit() {
-    	cylinder.set(DoubleSolenoid.Value.kReverse);
+    	//cylinder.set(DoubleSolenoid.Value.kReverse);
         if (autonomousCommand != null) autonomousCommand.cancel();
         compressor.setClosedLoopControl(true);
         intakeCounter = 0;
@@ -368,6 +370,7 @@ public class Robot extends IterativeRobot {
         
         if(buttonY.get()) cylinder.set(DoubleSolenoid.Value.kForward);
         if(buttonA.get()) cylinder.set(DoubleSolenoid.Value.kReverse);
+        if(bumperRight.get() || bumperLeft.get()) stupidIntake = true;
         
         int direction = xbox.getPOV(0);
         
@@ -392,22 +395,23 @@ public class Robot extends IterativeRobot {
     		secondIntakeCounter = 0;
     	}
         
+        if(!stupidIntake){
         
         if(direction == 180) IntakeOnOff(-1);
         
         if(intake.get() < 0 && !firstSpikeFinished) intakeCounter++; 
         
-        if(!firstSpikeStarted && current > 13) firstSpikeStarted = true; 
+        if(intake.get() < 0 && !firstSpikeStarted && current > 13) firstSpikeStarted = true; 
         
         if(firstSpikeStarted && intakeCounter>50) intakeCounter = 0; 
         
         if(firstSpikeStarted && intakeCounter == 0 ) firstSpikeFinished = true;
         
-        if(firstSpikeFinished && current > 13) {secondSpikeStarted = true; secondIntakeCounter++;}
+        if(firstSpikeFinished && current > 20) {secondSpikeStarted = true; secondIntakeCounter++;}
         
-        if(secondSpikeStarted && secondIntakeCounter > 25) IntakeOnOff(-.4);
+        if(secondSpikeStarted && secondIntakeCounter > 2) IntakeOnOff(intakePower/-5);
         
-        if(secondSpikeStarted && secondIntakeCounter > 50){
+        if(secondSpikeStarted && secondIntakeCounter > 35){
         	IntakeOnOff(0); 
         	firstSpikeStarted = false;
         	firstSpikeFinished = false;
@@ -415,7 +419,7 @@ public class Robot extends IterativeRobot {
         	intakeCounter = 0; 
         	secondIntakeCounter = 0;
         }        
-        
+        }else if(direction == 180) IntakeOnOff(-1);
         //if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
         
         
