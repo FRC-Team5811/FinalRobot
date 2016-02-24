@@ -54,6 +54,7 @@ public class Robot extends IterativeRobot {
         
     int cycleCounter;
     int intakeCounter;
+    boolean firstSpikeDetected;
     
     //Global Speed Values
     double leftSpeed;
@@ -229,9 +230,9 @@ public class Robot extends IterativeRobot {
         	if(returnAfter){
         		if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
         		else driveMotors(0,0);
-    		if(shootBall){
-    			if(cycleCounter > 300) driveMotors(0,-.4);
-    		}
+    		//if(shootBall){
+    		//	if(cycleCounter > 515) driveMotors(0,-.4);
+    		//}
         		
         	}
         	
@@ -325,6 +326,7 @@ public class Robot extends IterativeRobot {
         if (autonomousCommand != null) autonomousCommand.cancel();
         compressor.setClosedLoopControl(true);
         intakeCounter = 0;
+        firstSpikeDetected = false;
         
         state = false;
         previousState = false;
@@ -348,6 +350,7 @@ public class Robot extends IterativeRobot {
         //checking for button values
         //change when button is ready for use
         //System.out.println(button.get());
+        
         /*if(buttonA.get() != previousState) {
         	state = !state;
         	previousState = state;
@@ -362,16 +365,21 @@ public class Robot extends IterativeRobot {
         
         int direction = xbox.getPOV(0);
         
-        if (direction != -1){
-        	if (direction == 0) IntakeOnOff(1);                        //Out
-        	//if (direction == 0 && cycleCounter < 60) IntakeOnOff(1);                        //Out
-        	else if (direction == 180 && (current < 13 || intakeCounter < 25)) IntakeOnOff(-1);//In and turn off at 30 amps
+
+        	if (direction == 90 && direction == 270){
+        		IntakeOnOff(0); intakeCounter = 0;
+        	}else if (direction == 0){
+        		IntakeOnOff(1); intakeCounter = 0;   //Out
+        	}else if ((direction == 180 && intakeCounter < 25) || (current > 13 && intakeCounter < 25)){ 
+        		IntakeOnOff(-1);   //IN
+        		if (current > 13 && intakeCounter>15) intakeCounter++;
+        	}else if(intakeCounter >= 25 && intakeCounter < 40) {IntakeOnOff(-.4); intakeCounter++;}
         	//else if (direction == 180 && (current < 13 || (intakeCounter >= 25 && intakeCounter < 40))) IntakeOnOff(intakePower);
-        	else IntakeOnOff(0); intakeCounter = 0;                    //Off
-        }
+        	else if(intakeCounter >= 40){IntakeOnOff(0); intakeCounter = 0;}
         
-        if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
-        intakeCounter++;
+        
+        //if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
+        
         
         /*if(xbox.getPOV(0)==90 || xbox.getPOV(0)==270) IntakeOnOff(0);
         else if(xbox.getPOV(0)==0) IntakeOnOff(-1);
@@ -389,7 +397,7 @@ public class Robot extends IterativeRobot {
         
         operatorControl();
         //System.out.println("After 2: " + frontLeftDriveMotor.get());
-        System.out.println("Aaron is Cool"); 
+        
         System.out.println(current);
         current = power.getCurrent(15);
     }
