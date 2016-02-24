@@ -54,7 +54,10 @@ public class Robot extends IterativeRobot {
         
     int cycleCounter;
     int intakeCounter;
-    boolean firstSpikeDetected;
+    boolean firstSpikeStarted;
+    boolean firstSpikeFinished;
+    boolean secondSpikeStarted;
+    int secondIntakeCounter;
     
     //Global Speed Values
     double leftSpeed;
@@ -326,7 +329,10 @@ public class Robot extends IterativeRobot {
         if (autonomousCommand != null) autonomousCommand.cancel();
         compressor.setClosedLoopControl(true);
         intakeCounter = 0;
-        firstSpikeDetected = false;
+        firstSpikeStarted = false;
+        firstSpikeFinished = false;
+        secondSpikeStarted = false;
+        secondIntakeCounter = 0;
         
         state = false;
         previousState = false;
@@ -366,7 +372,7 @@ public class Robot extends IterativeRobot {
         int direction = xbox.getPOV(0);
         
 
-        	if (direction == 90 && direction == 270){
+        	/*if (direction == 90 && direction == 270){
         		IntakeOnOff(0); intakeCounter = 0;
         	}else if (direction == 0){
         		IntakeOnOff(1); intakeCounter = 0;   //Out
@@ -374,9 +380,41 @@ public class Robot extends IterativeRobot {
         		IntakeOnOff(-1);   //IN
         		if (current > 13 && intakeCounter>15) intakeCounter++;
         	}else if(intakeCounter >= 25 && intakeCounter < 40) {IntakeOnOff(-.4); intakeCounter++;}
-        	//else if (direction == 180 && (current < 13 || (intakeCounter >= 25 && intakeCounter < 40))) IntakeOnOff(intakePower);
-        	else if(intakeCounter >= 40){IntakeOnOff(0); intakeCounter = 0;}
+        	
+        	else if(intakeCounter >= 40){IntakeOnOff(0); intakeCounter = 0;}*/
         
+        if (direction == 90 || direction == 270){
+    		IntakeOnOff(0); intakeCounter = 0; firstSpikeStarted = false; firstSpikeFinished = false; secondSpikeStarted = false;
+    		secondIntakeCounter = 0;
+        }
+        if (direction == 0){
+    		IntakeOnOff(1); intakeCounter = 0; firstSpikeStarted = false; firstSpikeFinished = false; secondSpikeStarted = false;
+    		secondIntakeCounter = 0;
+    	}
+        
+        
+        if(direction == 180) IntakeOnOff(-1);
+        
+        if(intake.get() < 0 && !firstSpikeFinished) intakeCounter++; 
+        
+        if(!firstSpikeStarted && current > 13) firstSpikeStarted = true; 
+        
+        if(firstSpikeStarted && intakeCounter>50) intakeCounter = 0; 
+        
+        if(firstSpikeStarted && intakeCounter == 0 ) firstSpikeFinished = true;
+        
+        if(firstSpikeFinished && current > 13) {secondSpikeStarted = true; secondIntakeCounter++;}
+        
+        if(secondSpikeStarted && secondIntakeCounter > 25) IntakeOnOff(-.4);
+        
+        if(secondSpikeStarted && secondIntakeCounter > 50){
+        	IntakeOnOff(0); 
+        	firstSpikeStarted = false;
+        	firstSpikeFinished = false;
+        	secondSpikeStarted = false;
+        	intakeCounter = 0; 
+        	secondIntakeCounter = 0;
+        }        
         
         //if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
         
