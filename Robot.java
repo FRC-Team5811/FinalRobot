@@ -422,7 +422,6 @@ public class Robot extends IterativeRobot {
         }else if(direction == 180) IntakeOnOff(-1);
         //if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
         
-        
         /*if(xbox.getPOV(0)==90 || xbox.getPOV(0)==270) IntakeOnOff(0);
         else if(xbox.getPOV(0)==0) IntakeOnOff(-1);
         else if(xbox.getPOV(0)==180) IntakeOnOff(1);*/
