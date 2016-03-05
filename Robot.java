@@ -60,6 +60,9 @@ public class Robot extends IterativeRobot {
     boolean secondSpikeStarted;
     int secondIntakeCounter;
     
+    double leftTrim;
+    double rightTrim;
+    
     //Global Speed Values
     double leftSpeed;
     double rightSpeed;
@@ -227,10 +230,10 @@ public class Robot extends IterativeRobot {
         	if(cycleCounter < 100) driveMotors(-0.0, 0.0);
         	else if(cycleCounter < 300) driveMotors(-0.5, 0.5);
         	else driveMotors(0,0);
-        	if(releaseToggle){
+        	if(releaseToggle){ //Ball Release Sequence
         		//if(cycleCounter > 450) cylinder.set(DoubleSolenoid.Value.kReverse);
         		if(cycleCounter > 275 && cycleCounter < 300) IntakeOnOff(1);
-        		else IntakeOnOff(0); if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kForward);
+        		else{IntakeOnOff(0); if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kForward);}}
         	}
         	//if(returnAfter){
         		//if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
@@ -246,13 +249,13 @@ public class Robot extends IterativeRobot {
         	else if(cycleCounter < 150) driveMotors(-0.7, 0.7);
         	else driveMotors(0,0); 
         	
-        	if(releaseToggle){
+        	if(releaseToggle){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kReverse);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
-        		else IntakeOnOff(0); if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);
+        		else{IntakeOnOff(0); if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
         	}
-        	if(returnAfter && releaseToggle && raiseAfterRelease){
-        		if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.6,-.6);
+        	if(returnAfter && releaseToggle && raiseAfterRelease){ //Return Sequence
+        		if(cycleCounter > 300 && cycleCounter < 400) driveMotors(.6,-.6);
         		else driveMotors(0,0);
         	}
         	
@@ -263,12 +266,17 @@ public class Robot extends IterativeRobot {
         	else if(cycleCounter < 175)driveMotors(-0.8,0.8);
         	else driveMotors(0,0);
         	
-        	if(releaseToggle){
+        	if(releaseToggle){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
-        		else IntakeOnOff(0);if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);
+        		else{IntakeOnOff(0);if(raiseAfterRelease && !returnAfter){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
         	}
-        	
+        	if(returnAfter && releaseToggle && raiseAfterRelease){ //Return Sequence
+        		if(cycleCounter > 300 && cycleCounter < 320)driveMotors(-0.1,0.1);
+        		else if(cycleCounter > 320 && cycleCounter < 335)driveMotors(0,0);
+        		else if(cycleCounter > 335 && cycleCounter < 375)driveMotors(0.6,-0.6);
+        		else if(cycleCounter > 375 && cycleCounter < 400)driveMotors(0.8,-0.8);
+        	}
         	//if(cycleCounter < 150) driveMotors(-0.3, 0.3);
         	//else if(cycleCounter < 450) driveMotors(-0.8, 0.8);
         	//else if(cycleCounter < 600) cylinder.set(DoubleSolenoid.Value.kReverse);
@@ -279,13 +287,13 @@ public class Robot extends IterativeRobot {
         	else if(cycleCounter < 150) driveMotors(-0.7, 0.7);
         	else driveMotors(0,0);
         	
-        	if(releaseToggle){
+        	if(releaseToggle){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
-        		else IntakeOnOff(0); if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);
+        		else{IntakeOnOff(0); if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
         	}
-        	if(returnAfter && releaseToggle && raiseAfterRelease){
-        		if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.7,-.7);
+        	if(returnAfter && releaseToggle && raiseAfterRelease){ //Return Sequence
+        		if(cycleCounter > 300 && cycleCounter < 400) driveMotors(.7,-.7);
         		else driveMotors(0,0);
         	}
         	
@@ -296,10 +304,10 @@ public class Robot extends IterativeRobot {
         	else if(cycleCounter < 150) driveMotors(-0.7, 0.7); //Drive Forward Fast
         	else driveMotors(0,0);                             //Stop
         	
-        	if(releaseToggle){
+        	if(releaseToggle){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
-        		else IntakeOnOff(0); if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);
+        		else{IntakeOnOff(0);{ if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);}}
         	}
         	
         	
@@ -335,6 +343,11 @@ public class Robot extends IterativeRobot {
         firstSpikeFinished = false;
         secondSpikeStarted = false;
         secondIntakeCounter = 0;
+        
+        leftTrim = SmartDashboard.getNumber("DB/Slider 2", 0.0);
+        rightTrim = SmartDashboard.getNumber("DB/Slider 3", 0.0);
+        
+        
         
         state = false;
         previousState = false;
@@ -412,13 +425,13 @@ public class Robot extends IterativeRobot {
         if(secondSpikeStarted && secondIntakeCounter > 2) IntakeOnOff(intakePower/-5);
         
         if(secondSpikeStarted && secondIntakeCounter > 35){
-        	IntakeOnOff(0); 
+        	IntakeOnOff(0);
         	firstSpikeStarted = false;
         	firstSpikeFinished = false;
         	secondSpikeStarted = false;
-        	intakeCounter = 0; 
+        	intakeCounter = 0;
         	secondIntakeCounter = 0;
-        }        
+        }
         }else if(direction == 180) IntakeOnOff(-1);
         //if (current > 13 && intake.get() == -1 && intakeCounter > 30 ) IntakeOnOff(0); intakeCounter = 0;
         
