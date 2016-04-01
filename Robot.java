@@ -46,19 +46,26 @@ public class Robot extends IterativeRobot {
     Victor intake;
     
     double intakePower;
+    AnalogInput intakeUltrasonic;
     
     double autoSelecter;
     boolean releaseToggle;
     boolean raiseAfterRelease;
     boolean returnAfter;
+    double turnTime;
+    double turnPower;
     boolean shootBall;
-        
+    
     int cycleCounter;
     int intakeCounter;
     boolean firstSpikeStarted;
     boolean firstSpikeFinished;
     boolean secondSpikeStarted;
     int secondIntakeCounter;
+    double ultrasonicVoltage;
+    int rightThreshold;
+    int centerThreshold;
+    int leftThreshold;
     
     double leftTrim;
     double rightTrim;
@@ -96,10 +103,10 @@ public class Robot extends IterativeRobot {
      */
     private void driveMotors(double speedLeftDM, double speedRightDM) {
     	System.out.println("Command: " + speedLeftDM);
-    	frontLeftDriveMotor.set(speedLeftDM);
-    	frontRightDriveMotor.set(speedRightDM*rightTrim);
-    	backLeftDriveMotor.set(speedLeftDM);
-    	backRightDriveMotor.set(speedRightDM*rightTrim);
+    	frontLeftDriveMotor.set(speedLeftDM*rightTrim );
+    	frontRightDriveMotor.set(speedRightDM);
+    	backLeftDriveMotor.set(speedLeftDM*rightTrim);
+    	backRightDriveMotor.set(speedRightDM);
     }
     
     
@@ -146,8 +153,10 @@ public class Robot extends IterativeRobot {
        stupidIntake = false;
        
        rightTrim = SmartDashboard.getNumber("DB/Slider 3", 1.0);
+       if(rightTrim == 0){ SmartDashboard.putNumber("DB/Slider 3", 1); rightTrim = 1;}
        
        cylinder = new DoubleSolenoid(2,1);//port 0 failed, changed to 2
+       cylinder.set(DoubleSolenoid.Value.kReverse);
        
        //set cycle counter
        cycleCounter = 0;
@@ -189,6 +198,8 @@ public class Robot extends IterativeRobot {
         autonomousCommand = (Command) chooser.getSelected();
         cycleCounter = 0;
         autoSelecter = SmartDashboard.getNumber("DB/Slider 0", 0.0);
+        turnPower = SmartDashboard.getNumber("DB/Slider 1", 0.0);
+        turnTime = SmartDashboard.getNumber("DB/Slider 2", 0.0);
         releaseToggle = SmartDashboard.getBoolean("DB/Button 0", false);
         raiseAfterRelease = SmartDashboard.getBoolean("DB/Button 1", false);
         returnAfter = SmartDashboard.getBoolean("DB/Button 2",false);
@@ -198,6 +209,11 @@ public class Robot extends IterativeRobot {
         System.out.println(raiseAfterRelease);
         System.out.println(returnAfter);
         //if(autoSelecter == 0) autoRoutine=0;
+        
+        cylinder.set(DoubleSolenoid.Value.kReverse);
+        
+        rightTrim = SmartDashboard.getNumber("DB/Slider 3", 1);
+        if(rightTrim == 0){ SmartDashboard.putNumber("DB/Slider 3", 1); rightTrim = 1;}
         
         //driveMotors(0,0);
 		 String autoSelected = SmartDashboard.getString("Auto Selector", "Default");
@@ -229,10 +245,11 @@ public class Robot extends IterativeRobot {
         	else driveMotors(0,0);
         }else if(autoSelecter == 1){ // LOW BAR
         	cylinder.set(DoubleSolenoid.Value.kForward);
-        	if(cycleCounter < 100) driveMotors(-0.0, 0.0);
-        	else if(cycleCounter < 300) driveMotors(-0.5, 0.5);
-        	else driveMotors(0,0);
-        	if(releaseToggle){ //Ball Release Sequence
+        	if(cycleCounter < 100){ driveMotors(-0.0, 0.0);
+        	}else if(cycleCounter < 250){ driveMotors(-0.5, 0.5);
+        	}else driveMotors(0,0);
+        	
+        	if(releaseToggle && cycleCounter > 275){ //Ball Release Sequence
         		//if(cycleCounter > 450) cylinder.set(DoubleSolenoid.Value.kReverse);
         		if(cycleCounter > 275 && cycleCounter < 300) IntakeOnOff(1);
         		else{IntakeOnOff(0); }//if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kForward);}}
@@ -240,21 +257,40 @@ public class Robot extends IterativeRobot {
         	//Arm Raising Sequence
         	if(raiseAfterRelease && cycleCounter>300){ cylinder.set(DoubleSolenoid.Value.kForward);}
         	
-        	//if(returnAfter){
-        		//if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
-        		//else driveMotors(0,0);
-    		//if(shootBall){
+        	if(returnAfter){
+        		if(cycleCounter > 300 && cycleCounter < 475) driveMotors(.4,-.4);
+        		else driveMotors(0,0);
+        	}
+        	//if(shootBall){
     		//	if(cycleCounter > 515) driveMotors(0,-.4);
     		//}
         		
         	//}
+        
+        }else if(autoSelecter == 1.5){ // LOW BAR LOW GOAL
+        	cylinder.set(DoubleSolenoid.Value.kForward);
+        	if(cycleCounter < 100) driveMotors(-0.0, 0.0);
+        	else if(cycleCounter < 200) driveMotors(-0.5, 0.5);
+        	else if(cycleCounter < 400){ 
+        		cylinder.set(DoubleSolenoid.Value.kReverse);
+        		driveMotors(-0.3, 0.5);
+        	}else if(cycleCounter < 500){ 
+        		driveMotors(0,0);
+        		cylinder.set(DoubleSolenoid.Value.kForward);
+        	}else if(cycleCounter < 600){ driveMotors(-.2,.2);
+        	}else if(cycleCounter < 665){ IntakeOnOff(1);
+        	}else if(cycleCounter < 725){ IntakeOnOff(-1);
+        	}else if(cycleCounter < 750){ 
+        		IntakeOnOff(0); 
+        		driveMotors(0,0);
+        	} 
         	
         }else if(autoSelecter == 2){ // ROUGH TERRAIN
-        	if(cycleCounter < 50) driveMotors(-0.3, 0.3);
-        	else if(cycleCounter < 150) driveMotors(-0.7, 0.7);
+        	if(cycleCounter < 35) driveMotors(-0.3, 0.3);
+        	else if(cycleCounter < 150) driveMotors(-0.75, 0.75);
         	else driveMotors(0,0); 
         	
-        	if(releaseToggle){ //Ball Release Sequence
+        	if(releaseToggle && cycleCounter > 165){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kReverse);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
         		else{IntakeOnOff(0);}// if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
@@ -262,43 +298,85 @@ public class Robot extends IterativeRobot {
         	//Arm Raising Sequence
         	if(raiseAfterRelease && cycleCounter>230){ cylinder.set(DoubleSolenoid.Value.kForward);}
         	
-        	if(returnAfter){ //Return Sequence
+        	if(returnAfter && cycleCounter > 300){ //Return Sequence
         		if(cycleCounter > 300 && cycleCounter < 400) driveMotors(.6,-.6);
         		else driveMotors(0,0);
         	}
         	
+        }else if(autoSelecter == 2.5){ // CHEVAL DE FRISE
+        	if(cycleCounter < 200){driveMotors(-0.3,0.3);
+        	}if(cycleCounter < 250){ cylinder.set(DoubleSolenoid.Value.kForward);
+        	}if(cycleCounter < 260){ driveMotors(0.2,-0.2);
+        	}if(cycleCounter < 300){ driveMotors(-0.6,0.6);
+        	}if(cycleCounter < 350){ driveMotors(-0.3,0.3);
+        	}if(cycleCounter < 375){ driveMotors(0,0);
+        	}
+        	
+        	
         }else if(autoSelecter == 3){ // ROCKWALL
         	
-        	if(cycleCounter < 50) driveMotors(-0.3, 0.3);
+        	/*if(cycleCounter < 40) driveMotors(-0.3, 0.3);    //Forwards rock wall
         	else if(cycleCounter < 150)cylinder.set(DoubleSolenoid.Value.kForward);
         	else if(cycleCounter < 175)driveMotors(-0.8,0.8);
-        	else driveMotors(0,0);
+        	else driveMotors(0,0);*/
         	
-        	if(releaseToggle){ //Ball Release Sequence
-        		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
-        		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
-        		else{IntakeOnOff(0);}//if(raiseAfterRelease && !returnAfter){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
+        	if(cycleCounter <40){ driveMotors(0.25,-0.25);    //Backwards rock wall
+        	}else if(cycleCounter <100){cylinder.set(DoubleSolenoid.Value.kForward);  
+        	}else if(cycleCounter <175){driveMotors(0.6,-0.6); IntakeOnOff(-.8);
+        	}else if(cycleCounter <200){driveMotors(0.7,-0.7); 
+        	}else if(cycleCounter <215){driveMotors(0.8,-0.8); 
+        	//else if(cycleCounter <250)driveMotors(0.5,-0.5);
+        	}else if(cycleCounter < 250){driveMotors(0,0); IntakeOnOff(0);
         	}
-        	//Arm Raising Sequence
-        	if(raiseAfterRelease && cycleCounter>230){ cylinder.set(DoubleSolenoid.Value.kForward);}
+        	/*if(releaseToggle && cycleCounter > 275){ //Ball Release Sequence
+        		if(cycleCounter > 275) cylinder.set(DoubleSolenoid.Value.kForward);
+        		if(cycleCounter > 275 && cycleCounter < 300) IntakeOnOff(1);
+        		else{IntakeOnOff(0);}//if(raiseAfterRelease && !returnAfter){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
+        	}*/
         	
-        	if(returnAfter){ //Return Sequence
+        	//Updated Rock wall auto ball release sequence
+        	if(cycleCounter>225 && releaseToggle && !returnAfter){
+        		if(cycleCounter < 275){ cylinder.set(DoubleSolenoid.Value.kReverse);
+        		}else if(cycleCounter < 335){ driveMotors(-0.5,-0.5); 
+        		}else if(cycleCounter < 385){ cylinder.set(DoubleSolenoid.Value.kForward); driveMotors(0,0);
+        		}else if(cycleCounter < 435){ IntakeOnOff(1);
+        		}else if(cycleCounter < 460) IntakeOnOff(0);
+        	}
+        	
+        	//Updated Rock wall auto return sequence
+        	if(cycleCounter>225 && returnAfter){
+        		if(cycleCounter < 275){ cylinder.set(DoubleSolenoid.Value.kReverse);
+        		}else if(cycleCounter < 325){ driveMotors(-0.2,-0.2); 
+        		}else if(cycleCounter < 375){ cylinder.set(DoubleSolenoid.Value.kForward); driveMotors(0,0);
+        		}else if(cycleCounter < 389){ driveMotors(-0.3,0.3); if(releaseToggle){IntakeOnOff(1);}
+        		}else if(cycleCounter < 450){ driveMotors(0.7,-0.7); if(releaseToggle){IntakeOnOff(0);}else{IntakeOnOff(-.8);}
+        		}else if(cycleCounter <500){ cylinder.set(DoubleSolenoid.Value.kReverse); driveMotors(0,0);
+        		}else if(cycleCounter <550){ driveMotors(-0.2,-0.2);
+        		}else if(cycleCounter < 575){ cylinder.set(DoubleSolenoid.Value.kForward); driveMotors(0,0);
+        		}
+        		
+        	}
+        	
+        	//Arm Raising Sequence
+        	//if(raiseAfterRelease && cycleCounter>300){ cylinder.set(DoubleSolenoid.Value.kForward);}
+        	
+        	/*if(returnAfter && cycleCounter > 300){ //Return Sequence
         		if(cycleCounter > 300 && cycleCounter < 320)driveMotors(-0.1,0.1);
         		else if(cycleCounter > 320 && cycleCounter < 335)driveMotors(0,0);
         		else if(cycleCounter > 335 && cycleCounter < 375)driveMotors(0.6,-0.6);
         		else if(cycleCounter > 375 && cycleCounter < 400)driveMotors(0.8,-0.8);
-        	}
+        	}*/
         	//if(cycleCounter < 150) driveMotors(-0.3, 0.3);
         	//else if(cycleCounter < 450) driveMotors(-0.8, 0.8);
         	//else if(cycleCounter < 600) cylinder.set(DoubleSolenoid.Value.kReverse);
         	//else if(cycleCounter < )
             // driveMotors(0,0);
         }else if(autoSelecter == 4){ // MOAT
-        	if(cycleCounter < 50) driveMotors(-0.3, 0.3);
-        	else if(cycleCounter < 150) driveMotors(-0.7, 0.7);
+        	if(cycleCounter < 35) driveMotors(-0.3, 0.3);
+        	else if(cycleCounter < 175) driveMotors(-0.75, 0.75);
         	else driveMotors(0,0);
         	
-        	if(releaseToggle){ //Ball Release Sequence
+        	if(releaseToggle && cycleCounter > 165){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
         		else{IntakeOnOff(0);}// if(raiseAfterRelease){ cylinder.set(DoubleSolenoid.Value.kReverse);}}
@@ -306,19 +384,19 @@ public class Robot extends IterativeRobot {
         	//Arm Raising Sequence
         	if(raiseAfterRelease && cycleCounter>230){ cylinder.set(DoubleSolenoid.Value.kForward);}
         	
-        	if(returnAfter){ //Return Sequence
+        	if(returnAfter && cycleCounter > 300){ //Return Sequence
         		if(cycleCounter > 300 && cycleCounter < 400) driveMotors(.7,-.7);
         		else driveMotors(0,0);
         	}
         	
         }else if(autoSelecter == 5){ // RAMPARTS
-        	if(cycleCounter < 25) driveMotors(-0.4, 0.4);     //Drive Forward Slow
-        	else if(cycleCounter < 75) driveMotors(-0.7, 0.7); //Drive Forward Fast
-        	else if(cycleCounter < 90) driveMotors(-1, 0.2); //Turn to the left
-        	else if(cycleCounter < 150) driveMotors(-0.7, 0.7); //Drive Forward Fast
-        	else driveMotors(0,0);                             //Stop
+        	if(cycleCounter < 25){ driveMotors(-0.43, 0.4);       //Drive Forward Slow
+        	}else if(cycleCounter < 75){ driveMotors(-0.75, 0.7);  //Drive Forward Fast
+        	}else if(cycleCounter < 90){ driveMotors(-1,0);    //Turn to the left
+        	}else if(cycleCounter < 135){ driveMotors(-0.78, 0.7); //Drive Forward Fast
+        	}else driveMotors(0,0);                              //Stop
         	
-        	if(releaseToggle){ //Ball Release Sequence
+        	if(releaseToggle && cycleCounter > 165){ //Ball Release Sequence
         		if(cycleCounter > 165) cylinder.set(DoubleSolenoid.Value.kForward);
         		if(cycleCounter > 205 && cycleCounter < 230) IntakeOnOff(1);
         		else{IntakeOnOff(0);}// if(raiseAfterRelease) cylinder.set(DoubleSolenoid.Value.kReverse);}}
@@ -326,7 +404,11 @@ public class Robot extends IterativeRobot {
         	//Arm Raising Sequence
         	if(raiseAfterRelease && cycleCounter>230){ cylinder.set(DoubleSolenoid.Value.kForward);}
         	
+        }else if(autoSelecter ==4.9){
+        	if(cycleCounter < turnTime*20){ driveMotors(turnPower,turnPower);}
+        	else{ driveMotors(0,0);}  
         }
+        
         /*if (cycleCounter < 25) driveMotors(-1, 1);
         if (cycleCounter > 25) driveMotors(0, 0);
         */
@@ -359,8 +441,13 @@ public class Robot extends IterativeRobot {
         secondSpikeStarted = false;
         secondIntakeCounter = 0;
         
+        intakeUltrasonic = new AnalogInput(0);
+        ultrasonicVoltage = 0;
+        
         //leftTrim = SmartDashboard.getNumber("DB/Slider 2", 0.0);
-        rightTrim = SmartDashboard.getNumber("DB/Slider 3", 0.0);
+        rightTrim = SmartDashboard.getNumber("DB/Slider 3", 1);
+        if(rightTrim == 0){ SmartDashboard.putNumber("DB/Slider 3", 1); rightTrim = 1;}
+        rightTrim = 1;
         
         
         
@@ -373,7 +460,7 @@ public class Robot extends IterativeRobot {
         Scheduler.getInstance().run();
         intakePower = SmartDashboard.getNumber("DB/Slider 1",5);
         current = power.getCurrent(15);
-        
+        //ultrasonicVoltage = intakeUltrasonic.getVoltage();
         
         //arcadeDrive(joyStickRight.getX(),joyStickLeft.getY());
         //arcadeDrive(logitech.getRawAxis(0),logitech.getRawAxis(5));
@@ -452,6 +539,17 @@ public class Robot extends IterativeRobot {
         }else if(direction == 180) IntakeOnOff(-1);
         */
         
+        if(ultrasonicVoltage < leftThreshold){
+        	SmartDashboard.putString("DB/String 0", "No Ball");
+        }if(ultrasonicVoltage > rightThreshold){
+        	SmartDashboard.putString("DB/String 0", "Right");
+        }if(ultrasonicVoltage < rightThreshold && ultrasonicVoltage > centerThreshold){
+        	SmartDashboard.putString("DB/String 0", "Center");
+        }if(ultrasonicVoltage > leftThreshold && ultrasonicVoltage < centerThreshold){
+        	SmartDashboard.putString("DB/String 0", "Left");
+        }
+        System.out.println("Ultrasonic Sensor Voltage:" + ultrasonicVoltage);
+        
         if(direction==90 || direction==270){
         	intakeCounter = 0; secondIntakeCounter=0;
         	IntakeOnOff(0);
@@ -497,7 +595,7 @@ public class Robot extends IterativeRobot {
         System.out.println(current);
         current = power.getCurrent(15);
         
-        System.out.println("Memes (a tribute to Sam meme master sidhu)");
+        //System.out.println("Memes (a tribute to Sam meme master sidhu)");
     }
     
     
