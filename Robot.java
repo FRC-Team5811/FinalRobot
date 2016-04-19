@@ -54,6 +54,7 @@ public class Robot extends IterativeRobot {
     Victor backLeftDriveMotor;
     Victor backRightDriveMotor;
     Victor intake;
+    Victor scaleMotor;
     
     double intakePower;
     AnalogInput intakeUltrasonic;
@@ -150,6 +151,8 @@ public class Robot extends IterativeRobot {
        backRightDriveMotor = new Victor(3);
        
        intake = new Victor(4);
+       
+       scaleMotor = new Victor(5);
        
        //joyStickLeft = new Joystick(0);
        //joyStickRight = new Joystick(1);
@@ -515,7 +518,7 @@ public class Robot extends IterativeRobot {
         intakePower = SmartDashboard.getNumber("DB/Slider 1",5);
         current = power.getCurrent(15);
         ultrasonicVoltage = intakeUltrasonic.getAverageValue();
-        
+        //intakeUltrasonic.getValue()
         //arcadeDrive(joyStickRight.getX(),joyStickLeft.getY());
         //arcadeDrive(logitech.getRawAxis(0),logitech.getRawAxis(5));
         arcadeDrive(logitech.getRawAxis(0)+(logitech.getRawAxis(3)-logitech.getRawAxis(2)),logitech.getRawAxis(5));
@@ -543,6 +546,8 @@ public class Robot extends IterativeRobot {
         if(xboxStartButton.get()) scalePistons.set(DoubleSolenoid.Value.kForward);
         if(xboxBackButton.get()) scalePistons.set(DoubleSolenoid.Value.kReverse);
         direction = xbox.getPOV(0);
+        
+        scaleMotor.set(xbox.getRawAxis(1));
         
         //logitechDirection= logitech.getPOV(1);
 
